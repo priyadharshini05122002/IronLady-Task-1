@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learner Management System</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Search Section */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .search-box input,
+        .search-box select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 180px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-edit {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 16px;
+        }
+
+        .btn-delete {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .status-inactive {
+            background-color: #9E9E9E;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>🎓 IronLady Learner Management</h1>
+
+    <!-- Alerts -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- Header -->
+    <div class="header-section">
+        <a href="/learners/new" class="btn btn-add">➕ Add New Learner</a>
+    </div>
+
+    <!-- 🔍 Search Form -->
+    <form action="/learners/search" method="get" class="search-box">
+        <input type="text" name="name" placeholder="Search by name" th:value="${param.name}">
+        <input type="text" name="email" placeholder="Search by email" th:value="${param.email}">
+        <select name="status">
+            <option value="">-- Status --</option>
+            <option value="Active" th:selected="${param.status == 'Active'}">Active</option>
+            <option value="Inactive" th:selected="${param.status == 'Inactive'}">Inactive</option>
+            <option value="Pending" th:selected="${param.status == 'Pending'}">Pending</option>
+        </select>
+        <button type="submit" class="btn btn-add">🔍 Search</button>
+    </form>
+
+    <!-- Sort Form -->
+    <form action="/learners" method="get" style="margin-bottom:20px;">
+        <select name="sortField">
+            <option value="learnerId" th:selected="${sortField == 'learnerId'}">Sort by ID</option>
+            <option value="fullName" th:selected="${sortField == 'fullName'}">Sort by Name</option>
+            <option value="status" th:selected="${sortField == 'status'}">Sort by Status</option>
+        </select>
+
+        <select name="sortDir">
+            <option value="asc" th:selected="${sortDir == 'asc'}">Ascending</option>
+            <option value="desc" th:selected="${sortDir == 'desc'}">Descending</option>
+        </select>
+
+        <button type="submit" class="btn btn-add">↕ Sort</button>
+    </form>
+
+    <!-- Empty -->
+    <div th:if="${learners.isEmpty()}" class="empty-message">
+        No learners found.
+    </div>
+
+    <!-- Table -->
+    <table th:if="${!learners.isEmpty()}">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Background</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="learner : ${learners}">
+            <td th:text="${learner.learnerId}"></td>
+            <td th:text="${learner.fullName}"></td>
+            <td th:text="${learner.email}"></td>
+            <td th:text="${learner.phone}"></td>
+            <td th:text="${learner.background}"></td>
+            <td>
+                <span class="status-badge"
+                      th:classappend="${learner.status == 'Active'} ? 'status-active' :
+                                      (${learner.status == 'Inactive'} ? 'status-inactive' : 'status-pending')"
+                      th:text="${learner.status}">
+                </span>
+            </td>
+            <td>
+                <div class="actions">
+                    <a th:href="@{/learners/edit/{id}(id=${learner.learnerId})}" class="btn-edit">✏️ Edit</a>
+                    <a th:href="@{/learners/delete/{id}(id=${learner.learnerId})}"
+                       class="btn-delete"
+                       onclick="return confirm('Are you sure?')">🗑 Delete</a>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+<div style="margin-top:20px; text-align:center;" th:if="${totalPages > 1}">
+
+    <a th:if="${currentPage > 0}"
+       th:href="@{/learners(page=${currentPage - 1},
+                            sortField=${sortField},
+                            sortDir=${sortDir})}"
+       class="btn btn-add">⬅ Prev</a>
+
+    <span style="margin:0 15px;">
+        Page <b th:text="${currentPage + 1}"></b>
+        of <b th:text="${totalPages}"></b>
+    </span>
+
+    <a th:if="${currentPage + 1 < totalPages}"
+       th:href="@{/learners(page=${currentPage + 1},
+                            sortField=${sortField},
+                            sortDir=${sortDir})}"
+       class="btn btn-add">Next ➡</a>
+</div>
+    
+
+</div>
+</body>
+</html>
